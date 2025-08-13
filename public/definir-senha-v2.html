@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Definir Senha - VITAL TRR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        input[type="password"] {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #4f46e5;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .message.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .message.info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .message.warning {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fed7aa;
+        }
+        
+        .btn-secondary {
+            color: #6b7280;
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: underline;
+        }
+        
+        .btn-secondary:hover {
+            color: #4f46e5;
+        }
+        
+        .debug-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #64748b;
+            text-align: left;
+        }
+        
+        .version-info {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+            font-weight: 600;
+            color: #0c4a6e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">V</div>
+        
+        <h1>Definir Senha</h1>
+        <p class="subtitle">Crie sua senha para acessar o sistema VITAL TRR</p>
+        
+        <div class="version-info">
+            🚀 VERSÃO EMERGENCIAL v2.0 - SEM CACHE - SEM PROMPTS
+        </div>
+        
+        <div id="message-container"></div>
+        
+        <form id="senha-form">
+            <div class="form-group">
+                <label for="senha">Nova Senha</label>
+                <input type="password" id="senha" placeholder="Digite sua nova senha" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmar">Confirmar Senha</label>
+                <input type="password" id="confirmar" placeholder="Confirme sua nova senha" required minlength="6">
+            </div>
+            
+            <button type="submit" class="btn-primary" id="btn-definir">
+                Definir Senha
+            </button>
+        </form>
+        
+        <div id="debug-container"></div>
+        
+        <button type="button" class="btn-secondary" onclick="voltarParaLogin()">
+            Voltar para o Login
+        </button>
+    </div>
+
+    <script>
+        // 🚀 VERSÃO EMERGENCIAL v2.0 - CACHE BYPASS
+        let loading = false;
+        
+        // BLOQUEAR TODOS OS PROMPTS ABSOLUTAMENTE
+        window.prompt = function() {
+            console.log('🚫 PROMPT TOTALMENTE BLOQUEADO - VERSÃO v2.0!');
+            return null;
+        };
+        
+        // Sobrescrever confirm também
+        window.confirm = function() {
+            console.log('🚫 CONFIRM BLOQUEADO - VERSÃO v2.0!');
+            return true;
+        };
+        
+        // Função para mostrar mensagens
+        function showMessage(text, type = 'info') {
+            const container = document.getElementById('message-container');
+            container.innerHTML = `<div class="message ${type}">${text}</div>`;
+            console.log(`[v2.0-${type.toUpperCase()}] ${text}`);
+        }
+        
+        // Função para mostrar debug
+        function showDebug(text) {
+            const container = document.getElementById('debug-container');
+            container.innerHTML = `<div class="debug-info">v2.0 DEBUG: ${text}</div>`;
+            console.log(`[v2.0-DEBUG] ${text}`);
+        }
+        
+        // Função para definir loading
+        function setLoading(isLoading) {
+            loading = isLoading;
+            const button = document.getElementById('btn-definir');
+            const inputs = document.querySelectorAll('input');
+            
+            button.disabled = isLoading;
+            button.textContent = isLoading ? 'Definindo...' : 'Definir Senha';
+            
+            inputs.forEach(input => {
+                input.disabled = isLoading;
+            });
+        }
+        
+        // 🔑 Extração do email do token JWT - VERSÃO ROBUSTA
+        function getEmailFromToken() {
+            console.log('🔍 v2.0: Iniciando extração do email...');
+            showDebug('v2.0: Tentando extrair email do token JWT...');
+            
+            try {
+                // Verificar hash da URL
+                const hash = window.location.hash;
+                console.log('🔗 v2.0: Hash da URL:', hash);
+                showDebug(`v2.0: Hash encontrado: ${hash.substring(0, 50)}...`);
+                
+                if (!hash || hash.length < 10) {
+                    throw new Error('Hash não encontrado ou muito curto');
+                }
+                
+                const urlParams = new URLSearchParams(hash.substring(1));
+                const accessToken = urlParams.get('access_token');
+                
+                if (!accessToken) {
+                    throw new Error('Access token não encontrado no hash');
+                }
+                
+                console.log('🔑 v2.0: Token encontrado, tamanho:', accessToken.length);
+                showDebug(`v2.0: Token encontrado (${accessToken.length} chars)`);
+                
+                // Decodificar JWT
+                const parts = accessToken.split('.');
+                if (parts.length !== 3) {
+                    throw new Error('Token JWT inválido - formato incorreto');
+                }
+                
+                const payload = JSON.parse(atob(parts[1]));
+                console.log('📧 v2.0: Payload decodificado:', payload);
+                showDebug(`v2.0: Payload: ${JSON.stringify(payload, null, 2)}`);
+                
+                if (!payload.email) {
+                    throw new Error('Email não encontrado no payload do token');
+                }
+                
+                console.log('✅ v2.0: Email extraído com sucesso:', payload.email);
+                showDebug(`v2.0: Email extraído: ${payload.email}`);
+                return payload.email;
+                
+            } catch (error) {
+                console.error('❌ v2.0: Erro na extração:', error);
+                showDebug(`v2.0: ERRO: ${error.message}`);
+                return null;
+            }
+        }
+        
+        // 🚀 FUNÇÃO PRINCIPAL - BACKEND DIRETO
+        async function definirSenha(senha) {
+            console.log('🚀 v2.0: Iniciando definição de senha...');
+            showMessage('v2.0: Processando definição de senha...', 'info');
+            
+            // Extrair email
+            const email = getEmailFromToken();
+            
+            if (!email) {
+                showMessage('❌ v2.0: Não foi possível extrair o email do link. Verifique se o link está correto e não expirado.', 'error');
+                return false;
+            }
+            
+            showMessage(`📧 v2.0: Email detectado: ${email}`, 'success');
+            
+            try {
+                console.log('🌐 v2.0: Fazendo requisição para o backend...');
+                showDebug('v2.0: Enviando requisição para: https://vital-backend-eta.vercel.app/api/definir-senha-inicial');
+                
+                const response = await fetch('https://vital-backend-eta.vercel.app/api/definir-senha-inicial', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email: email,
+                        password: senha 
+                    })
+                });
+                
+                console.log('📡 v2.0: Response status:', response.status);
+                showDebug(`v2.0: Response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('📋 v2.0: Response data:', result);
+                showDebug(`v2.0: Response: ${JSON.stringify(result, null, 2)}`);
+                
+                if (result.success) {
+                    console.log('🎉 v2.0: Senha definida com sucesso!');
+                    showMessage('✅ v2.0: Senha definida com sucesso! Redirecionando para o login...', 'success');
+                    
+                    setTimeout(() => {
+                        voltarParaLogin();
+                    }, 2000);
+                    
+                    return true;
+                } else {
+                    throw new Error(result.message || result.error || 'Erro desconhecido do servidor');
+                }
+                
+            } catch (error) {
+                console.error('❌ v2.0: Erro no processo:', error);
+                showMessage(`❌ v2.0: Erro ao definir senha: ${error.message}`, 'error');
+                showDebug(`v2.0: ERRO COMPLETO: ${error.stack || error.message}`);
+                return false;
+            }
+        }
+        
+        // 🔄 Voltar para o login
+        function voltarParaLogin() {
+            console.log('🔄 v2.0: Redirecionando para login...');
+            window.location.href = '/';
+        }
+        
+        // 📝 Event listener do formulário
+        document.getElementById('senha-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (loading) return;
+            
+            const senha = document.getElementById('senha').value;
+            const confirmar = document.getElementById('confirmar').value;
+            
+            // Validações
+            if (senha.length < 6) {
+                showMessage('❌ v2.0: A senha deve ter pelo menos 6 caracteres', 'error');
+                return;
+            }
+            
+            if (senha !== confirmar) {
+                showMessage('❌ v2.0: As senhas não coincidem', 'error');
+                return;
+            }
+            
+            // Processar
+            setLoading(true);
+            await definirSenha(senha);
+            setLoading(false);
+        });
+        
+        // 🔄 Inicialização
+        window.addEventListener('load', () => {
+            console.log('🔄 v2.0: Página carregada - VERSÃO EMERGENCIAL SEM CACHE');
+            showMessage('v2.0: Sistema carregado. Verificando token...', 'info');
+            
+            const email = getEmailFromToken();
+            if (email) {
+                showMessage(`✅ v2.0: Sistema pronto! Email detectado: ${email}`, 'success');
+            } else {
+                showMessage('⚠️ v2.0: Problema na detecção do email. Verifique se o link está correto.', 'warning');
+            }
+        });
+        
+        // Log da versão para debug
+        console.log('🚀 VERSÃO EMERGENCIAL v2.0 CARREGADA - CACHE BYPASS - SEM PROMPTS');
+    </script>
+</body>
+</html>
