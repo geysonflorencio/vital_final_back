@@ -520,10 +520,37 @@ app.delete('/api/push/subscription', async (req, res) => {
 });
 
 // POST /api/push/send - Enviar notificação push
+// Aceita tanto formato manual quanto formato do Supabase Database Webhook
 app.post('/api/push/send', async (req, res) => {
   try {
     console.log('🔔 POST /api/push/send');
-    const { hospital_id, title, body, data, urgency } = req.body;
+    console.log('📦 Body recebido:', JSON.stringify(req.body, null, 2));
+    
+    let hospital_id, title, body, data, urgency;
+    
+    // Verificar se é formato do Supabase Webhook (tem "type" e "record")
+    if (req.body.type && req.body.record) {
+      // Formato Supabase Database Webhook
+      const record = req.body.record;
+      hospital_id = record.hospital_id;
+      title = '🚨 Nova Solicitação TRR';
+      body = `Paciente: ${record.paciente || 'N/A'} - ${record.motivo || 'Nova solicitação'}`;
+      urgency = 'high';
+      data = {
+        solicitacao_id: record.id,
+        tipo: 'nova_solicitacao',
+        table: req.body.table
+      };
+      console.log('📋 Formato Supabase Webhook detectado');
+    } else {
+      // Formato manual
+      hospital_id = req.body.hospital_id;
+      title = req.body.title;
+      body = req.body.body;
+      urgency = req.body.urgency;
+      data = req.body.data;
+      console.log('📋 Formato manual detectado');
+    }
 
     if (!webpush) {
       return res.status(503).json({ error: 'Web Push não disponível' });
