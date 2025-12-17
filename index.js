@@ -448,9 +448,15 @@ const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:suporte@appvital.com.
 let vapidConfigured = false;
 if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   try {
-    // Remover possíveis caracteres "=" do final das chaves
-    const cleanPublicKey = VAPID_PUBLIC_KEY.replace(/=+$/, '');
-    const cleanPrivateKey = VAPID_PRIVATE_KEY.replace(/=+$/, '');
+    // Limpar chaves - remover espaços, quebras de linha e "="
+    const cleanPublicKey = VAPID_PUBLIC_KEY.replace(/[\s\r\n=]+/g, '').trim();
+    const cleanPrivateKey = VAPID_PRIVATE_KEY.replace(/[\s\r\n=]+/g, '').trim();
+    
+    console.log('🔑 DEBUG VAPID:');
+    console.log('   Public key length:', VAPID_PUBLIC_KEY.length, '-> cleaned:', cleanPublicKey.length);
+    console.log('   Public key starts:', cleanPublicKey.substring(0, 10));
+    console.log('   Public key ends:', cleanPublicKey.substring(cleanPublicKey.length - 10));
+    console.log('   Private key length:', VAPID_PRIVATE_KEY.length, '-> cleaned:', cleanPrivateKey.length);
     
     webpush.setVapidDetails(VAPID_SUBJECT, cleanPublicKey, cleanPrivateKey);
     vapidConfigured = true;
