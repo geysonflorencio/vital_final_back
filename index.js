@@ -436,9 +436,20 @@ const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:suporte@appvital.com.br';
 
+let vapidConfigured = false;
 if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-  console.log('✅ Web Push VAPID configurado com sucesso');
+  try {
+    // Remover possíveis caracteres "=" do final das chaves
+    const cleanPublicKey = VAPID_PUBLIC_KEY.replace(/=+$/, '');
+    const cleanPrivateKey = VAPID_PRIVATE_KEY.replace(/=+$/, '');
+    
+    webpush.setVapidDetails(VAPID_SUBJECT, cleanPublicKey, cleanPrivateKey);
+    vapidConfigured = true;
+    console.log('✅ Web Push VAPID configurado com sucesso');
+  } catch (vapidError) {
+    console.error('❌ Erro ao configurar VAPID:', vapidError.message);
+    console.error('   Verifique se as chaves estão no formato correto (URL-safe Base64 sem "=")');
+  }
 } else {
   console.warn('⚠️ VAPID keys não configuradas ou web-push não instalado');
 }
@@ -517,8 +528,8 @@ app.post('/api/push/send', async (req, res) => {
       return res.status(503).json({ error: 'Web Push não disponível' });
     }
 
-    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-      return res.status(503).json({ error: 'VAPID não configurado' });
+    if (!vapidConfigured) {
+      return res.status(503).json({ error: 'VAPID não configurado corretamente' });
     }
 
     // Buscar todas as subscriptions do hospital
@@ -589,10 +600,10 @@ app.post('/api/push/send', async (req, res) => {
 // GET /api/push/status - Status do Web Push
 app.get('/api/push/status', (req, res) => {
   res.json({
-    enabled: !!webpush && !!VAPID_PUBLIC_KEY && !!VAPID_PRIVATE_KEY,
-    vapidConfigured: !!VAPID_PUBLIC_KEY && !!VAPID_PRIVATE_KEY,
+    enabled: !!webpush && vapidConfigured,
+    vapidConfigured: vapidConfigured,
     webPushLoaded: !!webpush,
-    publicKey: VAPID_PUBLIC_KEY || null,
+    publicKey: VAPID_PUBLIC_KEY ? VAPID_PUBLIC_KEY.replace(/=+$/, '') : null,
     timestamp: new Date().toISOString()
   });
 });
