@@ -563,10 +563,9 @@ app.post('/api/push/send', async (req, res) => {
     // Buscar todas as subscriptions do hospital
     let query = supabase
       .from('push_subscriptions')
-      .select('*')
-      .eq('active', true);
+      .select('*');
 
-    if (hospital_id) {
+    if (hospital_id && hospital_id !== 'test') {
       query = query.eq('hospital_id', hospital_id);
     }
 
