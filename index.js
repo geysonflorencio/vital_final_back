@@ -634,7 +634,33 @@ app.get('/api/push/status', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+// GET /api/push/subscriptions - Listar subscriptions (debug)
+app.get('/api/push/subscriptions', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('push_subscriptions')
+      .select('id, endpoint, hospital_id, created_at')
+      .order('created_at', { ascending: false })
+      .limit(20);
 
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    // Identificar tipo de dispositivo pelo endpoint
+    const subscriptions = (data || []).map(sub => ({
+      ...sub,
+      device: sub.endpoint.includes('fcm.googleapis.com') ? 'Android/Chrome' :
+              sub.endpoint.includes('push.apple.com') ? 'iOS/Safari' :
+              sub.endpoint.includes('mozilla.com') ? 'Firefox' :
+              sub.endpoint.includes('windows.com') ? 'Windows/Edge' : 'Outro'
+    }));
+
+    res.json({ count: subscriptions.length, subscriptions });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // ============================================
 // FIM WEB PUSH
 // ============================================
