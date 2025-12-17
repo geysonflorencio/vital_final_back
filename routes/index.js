@@ -2,6 +2,7 @@
 const express = require('express');
 const authRoutes = require('./auth');
 const solicitacoesRoutes = require('./solicitacoes');
+const pushRoutes = require('./push'); // Web Push Notifications
 
 const router = express.Router();
 
@@ -33,6 +34,9 @@ router.use('/auth', authRoutes);
 
 // Rotas de solicitações  
 router.use('/solicitacoes', solicitacoesRoutes);
+
+// Rotas de Web Push Notifications
+router.use('/push', pushRoutes);
 
 // Rota de documentação (placeholder)
 router.get('/docs', (req, res) => {
