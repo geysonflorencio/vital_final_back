@@ -2,13 +2,6 @@
 // Carregar .env apenas em desenvolvimento, sem sobrescrever variáveis do sistema
 require('dotenv').config({ override: false });
 
-// DEBUG: Verificar variáveis de ambiente
-console.log('🔍 DEBUG - Variáveis de ambiente:');
-console.log('   VAPID_PUBLIC_KEY existe:', !!process.env.VAPID_PUBLIC_KEY);
-console.log('   VAPID_PRIVATE_KEY existe:', !!process.env.VAPID_PRIVATE_KEY);
-console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'configurado' : 'NÃO CONFIGURADO');
-console.log('   NODE_ENV:', process.env.NODE_ENV);
-
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
@@ -452,18 +445,11 @@ if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
     const cleanPublicKey = VAPID_PUBLIC_KEY.replace(/[\s\r\n=]+/g, '').trim();
     const cleanPrivateKey = VAPID_PRIVATE_KEY.replace(/[\s\r\n=]+/g, '').trim();
     
-    console.log('🔑 DEBUG VAPID:');
-    console.log('   Public key length:', VAPID_PUBLIC_KEY.length, '-> cleaned:', cleanPublicKey.length);
-    console.log('   Public key starts:', cleanPublicKey.substring(0, 10));
-    console.log('   Public key ends:', cleanPublicKey.substring(cleanPublicKey.length - 10));
-    console.log('   Private key length:', VAPID_PRIVATE_KEY.length, '-> cleaned:', cleanPrivateKey.length);
-    
     webpush.setVapidDetails(VAPID_SUBJECT, cleanPublicKey, cleanPrivateKey);
     vapidConfigured = true;
     console.log('✅ Web Push VAPID configurado com sucesso');
   } catch (vapidError) {
     console.error('❌ Erro ao configurar VAPID:', vapidError.message);
-    console.error('   Verifique se as chaves estão no formato correto (URL-safe Base64 sem "=")');
   }
 } else {
   console.warn('⚠️ VAPID keys não configuradas ou web-push não instalado');
