@@ -545,6 +545,26 @@ app.delete('/api/push/cleanup', async (req, res) => {
   }
 });
 
+// DELETE /api/push/subscription/:id - Deletar subscription por ID
+app.delete('/api/push/subscription/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const { error } = await supabase
+      .from('push_subscriptions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ success: true, deleted: id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DELETE /api/push/subscription - Remover subscription
 app.delete('/api/push/subscription', async (req, res) => {
   try {
