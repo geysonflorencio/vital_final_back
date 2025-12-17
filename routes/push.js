@@ -1,7 +1,15 @@
 // routes/push.js
 // Rotas para Web Push Notifications - Sistema VITAL
 const express = require('express');
-const webpush = require('web-push');
+
+// Importar web-push de forma segura (pode não estar instalado)
+let webpush = null;
+try {
+  webpush = require('web-push');
+} catch (e) {
+  console.warn('⚠️ web-push não instalado - Web Push desabilitado');
+}
+
 const { supabase } = require('../config/database');
 
 const router = express.Router();
@@ -11,11 +19,11 @@ const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:suporte@appvital.com.br';
 
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
   console.log('✅ Web Push VAPID configurado com sucesso');
 } else {
-  console.warn('⚠️ VAPID keys não configuradas - Web Push desabilitado');
+  console.warn('⚠️ VAPID keys não configuradas ou web-push não instalado');
 }
 
 // POST /api/push/subscription - Registrar subscription de um dispositivo

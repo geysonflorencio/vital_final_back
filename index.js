@@ -5,6 +5,15 @@ const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const { getPasswordRedirectURL, logURLConfiguration } = require('./utils/urlUtils');
 
+// Importar web-push de forma segura
+let webpush = null;
+try {
+  webpush = require('web-push');
+  console.log('✅ web-push carregado com sucesso');
+} catch (e) {
+  console.warn('⚠️ web-push não instalado - Web Push desabilitado');
+}
+
 const app = express();
 
 // CORS - Configuração simplificada e funcional
@@ -417,6 +426,180 @@ app.get('/api/health', (req, res) => {
     service: 'VITAL API'
   });
 });
+
+// ============================================
+// WEB PUSH NOTIFICATIONS - ROTAS
+// ============================================
+
+// Configurar VAPID
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:suporte@appvital.com.br';
+
+if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  console.log('✅ Web Push VAPID configurado com sucesso');
+} else {
+  console.warn('⚠️ VAPID keys não configuradas ou web-push não instalado');
+}
+
+// POST /api/push/subscription - Registrar subscription
+app.post('/api/push/subscription', async (req, res) => {
+  try {
+    console.log('📱 POST /api/push/subscription');
+    const { subscription, user_id, hospital_id, device_info } = req.body;
+
+    if (!subscription || !subscription.endpoint) {
+      return res.status(400).json({ error: 'Subscription inválida' });
+    }
+
+    // Salvar no Supabase
+    const { data, error } = await supabase
+      .from('push_subscriptions')
+      .upsert({
+        user_id: user_id || null,
+        hospital_id: hospital_id || null,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys?.p256dh || null,
+        auth: subscription.keys?.auth || null,
+        device_info: device_info || null,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'endpoint'
+      })
+      .select();
+
+    if (error) {
+      console.error('❌ Erro ao salvar subscription:', error);
+      return res.status(500).json({ error: 'Erro ao salvar subscription', details: error.message });
+    }
+
+    console.log('✅ Subscription salva:', data?.[0]?.id);
+    res.json({ success: true, id: data?.[0]?.id });
+  } catch (error) {
+    console.error('💥 Erro:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/push/subscription - Remover subscription
+app.delete('/api/push/subscription', async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    
+    if (!endpoint) {
+      return res.status(400).json({ error: 'Endpoint é obrigatório' });
+    }
+
+    const { error } = await supabase
+      .from('push_subscriptions')
+      .delete()
+      .eq('endpoint', endpoint);
+
+    if (error) {
+      console.error('❌ Erro ao remover subscription:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/push/send - Enviar notificação push
+app.post('/api/push/send', async (req, res) => {
+  try {
+    console.log('🔔 POST /api/push/send');
+    const { hospital_id, title, body, data, urgency } = req.body;
+
+    if (!webpush) {
+      return res.status(503).json({ error: 'Web Push não disponível' });
+    }
+
+    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+      return res.status(503).json({ error: 'VAPID não configurado' });
+    }
+
+    // Buscar todas as subscriptions do hospital
+    let query = supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('active', true);
+
+    if (hospital_id) {
+      query = query.eq('hospital_id', hospital_id);
+    }
+
+    const { data: subscriptions, error } = await query;
+
+    if (error) {
+      console.error('❌ Erro ao buscar subscriptions:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    console.log(`📤 Enviando para ${subscriptions?.length || 0} dispositivos`);
+
+    const payload = JSON.stringify({
+      title: title || 'VITAL - Nova Notificação',
+      body: body || 'Você tem uma nova atualização',
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-72x72.png',
+      data: data || {},
+      tag: urgency === 'high' ? 'urgent' : 'normal',
+      requireInteraction: urgency === 'high'
+    });
+
+    const results = { sent: 0, failed: 0, errors: [] };
+
+    for (const sub of subscriptions || []) {
+      try {
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth
+          }
+        };
+
+        await webpush.sendNotification(pushSubscription, payload);
+        results.sent++;
+      } catch (err) {
+        results.failed++;
+        results.errors.push(err.message);
+        
+        // Se subscription expirou (410 Gone), remover do banco
+        if (err.statusCode === 410) {
+          await supabase
+            .from('push_subscriptions')
+            .delete()
+            .eq('endpoint', sub.endpoint);
+        }
+      }
+    }
+
+    console.log(`✅ Enviadas: ${results.sent}, Falhas: ${results.failed}`);
+    res.json(results);
+  } catch (error) {
+    console.error('💥 Erro ao enviar push:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/push/status - Status do Web Push
+app.get('/api/push/status', (req, res) => {
+  res.json({
+    enabled: !!webpush && !!VAPID_PUBLIC_KEY && !!VAPID_PRIVATE_KEY,
+    vapidConfigured: !!VAPID_PUBLIC_KEY && !!VAPID_PRIVATE_KEY,
+    webPushLoaded: !!webpush,
+    publicKey: VAPID_PUBLIC_KEY || null,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ============================================
+// FIM WEB PUSH
+// ============================================
 
 // Middleware de erro
 app.use((err, req, res, next) => {
