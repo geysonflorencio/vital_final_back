@@ -1,5 +1,6 @@
 // index.js - VITAL Backend (VERSÃO CORRIGIDA)
-require('dotenv').config();
+// Carregar .env apenas em desenvolvimento, sem sobrescrever variáveis do sistema
+require('dotenv').config({ override: false });
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
