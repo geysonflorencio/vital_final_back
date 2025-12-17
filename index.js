@@ -465,10 +465,16 @@ app.post('/api/push/subscription', async (req, res) => {
       return res.status(400).json({ error: 'Subscription inválida' });
     }
 
-    // Salvar no Supabase
+    // Primeiro, deletar qualquer subscription existente com o mesmo endpoint
+    await supabase
+      .from('push_subscriptions')
+      .delete()
+      .eq('endpoint', subscription.endpoint);
+
+    // Depois, inserir a nova subscription
     const { data, error } = await supabase
       .from('push_subscriptions')
-      .upsert({
+      .insert({
         user_id: user_id || null,
         hospital_id: hospital_id || null,
         endpoint: subscription.endpoint,
@@ -476,8 +482,6 @@ app.post('/api/push/subscription', async (req, res) => {
         auth: subscription.keys?.auth || null,
         device_info: device_info || null,
         updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'endpoint'
       })
       .select();
 
@@ -490,6 +494,53 @@ app.post('/api/push/subscription', async (req, res) => {
     res.json({ success: true, id: data?.[0]?.id });
   } catch (error) {
     console.error('💥 Erro:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/push/cleanup - Limpar subscriptions duplicadas
+app.delete('/api/push/cleanup', async (req, res) => {
+  try {
+    // Buscar todas as subscriptions
+    const { data: all, error: fetchError } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (fetchError) {
+      return res.status(500).json({ error: fetchError.message });
+    }
+
+    // Identificar duplicatas (manter apenas a mais recente de cada endpoint)
+    const seen = new Set();
+    const toDelete = [];
+
+    for (const sub of all || []) {
+      if (seen.has(sub.endpoint)) {
+        toDelete.push(sub.id);
+      } else {
+        seen.add(sub.endpoint);
+      }
+    }
+
+    // Deletar duplicatas
+    if (toDelete.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('push_subscriptions')
+        .delete()
+        .in('id', toDelete);
+
+      if (deleteError) {
+        return res.status(500).json({ error: deleteError.message });
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      removed: toDelete.length,
+      remaining: seen.size
+    });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
