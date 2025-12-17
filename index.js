@@ -1,6 +1,14 @@
 // index.js - VITAL Backend (VERSÃO CORRIGIDA)
 // Carregar .env apenas em desenvolvimento, sem sobrescrever variáveis do sistema
 require('dotenv').config({ override: false });
+
+// DEBUG: Verificar variáveis de ambiente
+console.log('🔍 DEBUG - Variáveis de ambiente:');
+console.log('   VAPID_PUBLIC_KEY existe:', !!process.env.VAPID_PUBLIC_KEY);
+console.log('   VAPID_PRIVATE_KEY existe:', !!process.env.VAPID_PRIVATE_KEY);
+console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'configurado' : 'NÃO CONFIGURADO');
+console.log('   NODE_ENV:', process.env.NODE_ENV);
+
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
