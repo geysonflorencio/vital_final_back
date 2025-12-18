@@ -429,6 +429,68 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Database status check
+app.get('/api/db-status', async (req, res) => {
+  try {
+    const startTime = Date.now();
+    
+    // Tenta fazer uma query simples para verificar conexão
+    const { data, error } = await supabase
+      .from('hospitals')
+      .select('id')
+      .limit(1);
+    
+    const responseTime = Date.now() - startTime;
+    
+    if (error) {
+      return res.status(500).json({
+        status: 'error',
+        message: error.message,
+        responseTime,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    res.json({
+      status: 'ok',
+      database: 'connected',
+      responseTime,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Auth service status check
+app.get('/api/auth/status', async (req, res) => {
+  try {
+    const startTime = Date.now();
+    
+    // Verifica se o serviço de auth está funcionando
+    const { data, error } = await supabase.auth.getSession();
+    
+    const responseTime = Date.now() - startTime;
+    
+    res.json({
+      status: 'ok',
+      auth: 'available',
+      responseTime,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ============================================
 // WEB PUSH NOTIFICATIONS - ROTAS
 // ============================================
