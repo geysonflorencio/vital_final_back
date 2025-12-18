@@ -27,7 +27,8 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:5174',
     'https://vital-deploy.vercel.app',
-    'https://vital-final.vercel.app'
+    'https://vital-final.vercel.app',
+    'https://vitalv2.netlify.app'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
