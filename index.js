@@ -63,7 +63,7 @@ app.delete('/api/excluir-usuario', async (req, res) => {
     console.log('🗑️ DELETE /api/excluir-usuario chamado');
     console.log('Body recebido:', req.body);
 
-    const { user_id, id, userId } = req.body;
+    const { user_id, id, userId, hospital_id, admin_id } = req.body;
     const userIdToDelete = user_id || id || userId;
 
     if (!userIdToDelete) {
@@ -71,6 +71,24 @@ app.delete('/api/excluir-usuario', async (req, res) => {
         error: 'ID do usuário é obrigatório',
         expected: 'user_id, id ou userId no body da requisição'
       });
+    }
+
+    // ⚠️ ISOLAMENTO POR HOSPITAL - Verificar se admin tem permissão
+    if (hospital_id) {
+      // Verificar se o usuário a ser excluído pertence ao hospital
+      const { data: userProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('hospital_id')
+        .eq('id', userIdToDelete)
+        .single();
+
+      if (!profileCheckError && userProfile && userProfile.hospital_id !== hospital_id) {
+        console.warn(`⚠️ Tentativa de excluir usuário de outro hospital: ${userProfile.hospital_id} vs ${hospital_id}`);
+        return res.status(403).json({
+          error: 'Você não tem permissão para excluir usuários de outro hospital',
+          message: 'Isolamento multi-tenant ativo'
+        });
+      }
     }
 
     console.log(`🎯 Excluindo usuário: ${userIdToDelete}`);
@@ -141,7 +159,7 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
     console.log('👤 POST /api/cadastrar-usuario chamado');
     console.log('Body recebido:', req.body);
 
-    const { nome, email, role, hospital_id } = req.body;
+    const { nome, email, role, hospital_id, admin_hospital_id } = req.body;
 
     // Validação básica
     if (!nome || !email || !role) {
@@ -149,6 +167,15 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
         error: 'Nome, email e role são obrigatórios',
         required: ['nome', 'email', 'role'],
         optional: ['hospital_id']
+      });
+    }
+
+    // ⚠️ ISOLAMENTO POR HOSPITAL - Verificar se admin está criando usuário no próprio hospital
+    if (admin_hospital_id && hospital_id && admin_hospital_id !== hospital_id) {
+      console.warn(`⚠️ Admin tentando criar usuário em outro hospital: ${admin_hospital_id} vs ${hospital_id}`);
+      return res.status(403).json({
+        error: 'Você não pode criar usuários para outro hospital',
+        message: 'Isolamento multi-tenant ativo'
       });
     }
 
@@ -566,11 +593,24 @@ app.post('/api/push/subscription', async (req, res) => {
 // DELETE /api/push/cleanup - Limpar subscriptions duplicadas
 app.delete('/api/push/cleanup', async (req, res) => {
   try {
-    // Buscar todas as subscriptions
-    const { data: all, error: fetchError } = await supabase
+    const { hospital_id } = req.body;
+
+    // ⚠️ ISOLAMENTO POR HOSPITAL
+    let query = supabase
       .from('push_subscriptions')
       .select('*')
       .order('created_at', { ascending: false });
+
+    // Se hospital_id fornecido, filtrar apenas subscriptions desse hospital
+    if (hospital_id) {
+      query = query.eq('hospital_id', hospital_id);
+      console.log(`🏥 Cleanup filtrado para hospital: ${hospital_id}`);
+    } else {
+      console.log('⚠️ Cleanup sem filtro de hospital - limpando duplicatas globais');
+    }
+
+    // Buscar subscriptions (filtradas ou todas)
+    const { data: all, error: fetchError } = await query;
 
     if (fetchError) {
       return res.status(500).json({ error: fetchError.message });
@@ -614,11 +654,21 @@ app.delete('/api/push/cleanup', async (req, res) => {
 app.delete('/api/push/subscription/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const { error } = await supabase
+    const { hospital_id } = req.body;
+
+    // ⚠️ ISOLAMENTO POR HOSPITAL
+    let query = supabase
       .from('push_subscriptions')
       .delete()
       .eq('id', id);
+
+    // Se hospital_id fornecido, adicionar como filtro de segurança
+    if (hospital_id) {
+      query = query.eq('hospital_id', hospital_id);
+      console.log(`🏥 Delete subscription filtrado para hospital: ${hospital_id}`);
+    }
+
+    const { error } = await query;
 
     if (error) {
       return res.status(500).json({ error: error.message });
@@ -785,11 +835,21 @@ app.get('/api/push/status', (req, res) => {
 // GET /api/push/subscriptions - Listar subscriptions (debug)
 app.get('/api/push/subscriptions', async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { hospital_id } = req.query;
+
+    let query = supabase
       .from('push_subscriptions')
       .select('id, endpoint, hospital_id, created_at')
       .order('created_at', { ascending: false })
       .limit(20);
+
+    // ⚠️ ISOLAMENTO POR HOSPITAL - Filtrar se hospital_id fornecido
+    if (hospital_id) {
+      query = query.eq('hospital_id', hospital_id);
+      console.log(`🏥 Listando subscriptions do hospital: ${hospital_id}`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       return res.status(500).json({ error: error.message });
