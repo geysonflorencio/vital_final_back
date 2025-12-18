@@ -696,23 +696,35 @@ app.post('/api/push/send', async (req, res) => {
       return res.status(503).json({ error: 'VAPID não configurado corretamente' });
     }
 
-    // Buscar todas as subscriptions do hospital
-    let query = supabase
-      .from('push_subscriptions')
-      .select('*');
-
-    if (hospital_id && hospital_id !== 'test') {
-      query = query.eq('hospital_id', hospital_id);
+    // ⚠️ ISOLAMENTO POR HOSPITAL - OBRIGATÓRIO
+    if (!hospital_id) {
+      console.warn('⚠️ hospital_id não fornecido - notificação não enviada por segurança');
+      return res.status(400).json({ 
+        error: 'hospital_id é obrigatório para enviar notificações',
+        message: 'Isolamento multi-tenant ativo'
+      });
     }
 
-    const { data: subscriptions, error } = await query;
+    console.log(`🏥 Filtrando notificações para hospital: ${hospital_id}`);
+
+    // Buscar APENAS subscriptions do hospital específico
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('hospital_id', hospital_id);
 
     if (error) {
       console.error('❌ Erro ao buscar subscriptions:', error);
       return res.status(500).json({ error: error.message });
     }
 
-    console.log(`📤 Enviando para ${subscriptions?.length || 0} dispositivos`);
+    console.log(`📤 Hospital ${hospital_id}: Enviando para ${subscriptions?.length || 0} dispositivos`);
+
+    // Se não houver subscriptions para este hospital, retornar sucesso (não é erro)
+    if (!subscriptions || subscriptions.length === 0) {
+      console.log(`ℹ️ Nenhum dispositivo registrado para o hospital ${hospital_id}`);
+      return res.json({ sent: 0, failed: 0, errors: [], message: 'Nenhum dispositivo registrado para este hospital' });
+    }
 
     const payload = JSON.stringify({
       title: title || 'VITAL - Nova Notificação',
