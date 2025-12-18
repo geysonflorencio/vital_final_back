@@ -436,15 +436,16 @@ app.get('/api/db-status', async (req, res) => {
     
     // Tenta fazer uma query simples para verificar conexão
     const { data, error } = await supabase
-      .from('hospitals')
+      .from('profiles')
       .select('id')
       .limit(1);
     
     const responseTime = Date.now() - startTime;
     
     if (error) {
-      return res.status(500).json({
-        status: 'error',
+      return res.status(200).json({
+        status: 'warning',
+        database: 'connection_issue',
         message: error.message,
         responseTime,
         timestamp: new Date().toISOString()
@@ -458,8 +459,9 @@ app.get('/api/db-status', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(200).json({
       status: 'error',
+      database: 'disconnected',
       message: error.message,
       timestamp: new Date().toISOString()
     });
