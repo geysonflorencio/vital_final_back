@@ -45,6 +45,8 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJ
 console.log('Ã°Å¸â€Â§ Inicializando Supabase...', { url: supabaseUrl });
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+app.set('supabase', supabase);
+
 // Log da configuraÃƒÂ§ÃƒÂ£o de URLs
 logURLConfiguration();
 
@@ -919,6 +921,7 @@ if (require.main === module) {
 scheduledNotifications.iniciarJobAutomatico(supabase, webpush);
 
 module.exports = app;
+
 
 
 
