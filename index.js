@@ -1,4 +1,4 @@
-﻿// index.js - VITAL Backend (VERSÃƒO CORRIGIDA)
+// index.js - VITAL Backend (VERSÃƒO CORRIGIDA)
 // Carregar .env apenas em desenvolvimento, sem sobrescrever variÃ¡veis do sistema
 require('dotenv').config({ override: false });
 
@@ -719,8 +719,8 @@ app.post('/api/push/send', async (req, res) => {
       // Formato Supabase Database Webhook
       const record = req.body.record;
       hospital_id = record.hospital_id;
-      title = 'ðŸš¨ Nova SolicitaÃ§Ã£o TRR';
-      body = `Paciente: ${record.paciente || 'N/A'} - ${record.motivo || 'Nova solicitaÃ§Ã£o'}`;
+      title = 'Nova Solicitacao TRR';
+      body = `Paciente: ${record.paciente || 'N/A'} - ${record.motivo || 'Nova solicitacao'}`;
       urgency = 'high';
       data = {
         solicitacao_id: record.id,
@@ -777,8 +777,8 @@ app.post('/api/push/send', async (req, res) => {
     }
 
     const payload = JSON.stringify({
-      title: title || 'VITAL - Nova NotificaÃ§Ã£o',
-      body: body || 'VocÃª tem uma nova atualizaÃ§Ã£o',
+      title: title || 'VITAL - Nova Notificacao',
+      body: body || 'Voce tem uma nova atualizacao',
       icon: '/icons/icon-192x192.png',
       badge: '/icons/icon-72x72.png',
       data: data || {},
