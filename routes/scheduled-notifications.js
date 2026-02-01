@@ -89,7 +89,7 @@ async function processarNotificacoesPendentes(supabase) {
           // Usar titulo e mensagem da notificacao agendada
           const payload = JSON.stringify({
             title: notif.titulo || 'Tempo de Reavaliacao Expirou!',
-            body: notif.mensagem || 'Paciente precisa de atencao!',
+            body: notif.corpo || 'Paciente precisa de atencao!',
             icon: '/icon-192.png',
             badge: '/icon-72.png',
             tag: 'reavaliacao-' + notif.solicitacao_id,
@@ -212,3 +212,4 @@ function getStatus() {
 }
 
 module.exports = { router, processarNotificacoesPendentes, iniciarJobAutomatico, getStatus };
+
