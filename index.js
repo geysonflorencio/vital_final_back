@@ -1,24 +1,25 @@
-// index.js - VITAL Backend (VERSÃƒO CORRIGIDA)
-// Carregar .env apenas em desenvolvimento, sem sobrescrever variÃ¡veis do sistema
+﻿// index.js - VITAL Backend (VERSÃƒÆ’O CORRIGIDA)
+// Carregar .env apenas em desenvolvimento, sem sobrescrever variÃƒÂ¡veis do sistema
 require('dotenv').config({ override: false });
 
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const { getPasswordRedirectURL, logURLConfiguration } = require('./utils/urlUtils');
+const scheduledNotifications = require('./routes/scheduled-notifications');
 
 // Importar web-push de forma segura
 let webpush = null;
 try {
   webpush = require('web-push');
-  console.log('âœ… web-push carregado com sucesso');
+  console.log('Ã¢Å“â€¦ web-push carregado com sucesso');
 } catch (e) {
-  console.warn('âš ï¸ web-push nÃ£o instalado - Web Push desabilitado');
+  console.warn('Ã¢Å¡Â Ã¯Â¸Â web-push nÃƒÂ£o instalado - Web Push desabilitado');
 }
 
 const app = express();
 
-// CORS - ConfiguraÃ§Ã£o simplificada e funcional
+// CORS - ConfiguraÃƒÂ§ÃƒÂ£o simplificada e funcional
 app.use(cors({
   origin: [
     'https://appvital.com.br',
@@ -37,14 +38,14 @@ app.use(cors({
 
 app.use(express.json());
 
-// ConfiguraÃ§Ã£o do Supabase
+// ConfiguraÃƒÂ§ÃƒÂ£o do Supabase
 const supabaseUrl = process.env.SUPABASE_URL || 'https://aeysoqtbencykavivgoe.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleXNvcXRiZW5jeWthdml2Z29lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTE4MTY1OSwiZXhwIjoyMDY0NzU3NjU5fQ.g64X3iebdB_TY_FWd6AI8mlej4uKMrKiFLG11z6hZlQ';
 
-console.log('ðŸ”§ Inicializando Supabase...', { url: supabaseUrl });
+console.log('Ã°Å¸â€Â§ Inicializando Supabase...', { url: supabaseUrl });
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Log da configuraÃ§Ã£o de URLs
+// Log da configuraÃƒÂ§ÃƒÂ£o de URLs
 logURLConfiguration();
 
 // Rota raiz
@@ -57,10 +58,10 @@ app.get('/', (req, res) => {
   });
 });
 
-// ROTA DELETE EXCLUIR USUÃRIO - IMPLEMENTAÃ‡ÃƒO DIRETA
+// ROTA DELETE EXCLUIR USUÃƒÂRIO - IMPLEMENTAÃƒâ€¡ÃƒÆ’O DIRETA
 app.delete('/api/excluir-usuario', async (req, res) => {
   try {
-    console.log('ðŸ—‘ï¸ DELETE /api/excluir-usuario chamado');
+    console.log('Ã°Å¸â€”â€˜Ã¯Â¸Â DELETE /api/excluir-usuario chamado');
     console.log('Body recebido:', req.body);
 
     const { user_id, id, userId, hospital_id, admin_id } = req.body;
@@ -68,14 +69,14 @@ app.delete('/api/excluir-usuario', async (req, res) => {
 
     if (!userIdToDelete) {
       return res.status(400).json({
-        error: 'ID do usuÃ¡rio Ã© obrigatÃ³rio',
-        expected: 'user_id, id ou userId no body da requisiÃ§Ã£o'
+        error: 'ID do usuÃƒÂ¡rio ÃƒÂ© obrigatÃƒÂ³rio',
+        expected: 'user_id, id ou userId no body da requisiÃƒÂ§ÃƒÂ£o'
       });
     }
 
-    // âš ï¸ ISOLAMENTO POR HOSPITAL - Verificar se admin tem permissÃ£o
+    // Ã¢Å¡Â Ã¯Â¸Â ISOLAMENTO POR HOSPITAL - Verificar se admin tem permissÃƒÂ£o
     if (hospital_id) {
-      // Verificar se o usuÃ¡rio a ser excluÃ­do pertence ao hospital
+      // Verificar se o usuÃƒÂ¡rio a ser excluÃƒÂ­do pertence ao hospital
       const { data: userProfile, error: profileCheckError } = await supabase
         .from('profiles')
         .select('hospital_id')
@@ -83,98 +84,98 @@ app.delete('/api/excluir-usuario', async (req, res) => {
         .single();
 
       if (!profileCheckError && userProfile && userProfile.hospital_id !== hospital_id) {
-        console.warn(`âš ï¸ Tentativa de excluir usuÃ¡rio de outro hospital: ${userProfile.hospital_id} vs ${hospital_id}`);
+        console.warn(`Ã¢Å¡Â Ã¯Â¸Â Tentativa de excluir usuÃƒÂ¡rio de outro hospital: ${userProfile.hospital_id} vs ${hospital_id}`);
         return res.status(403).json({
-          error: 'VocÃª nÃ£o tem permissÃ£o para excluir usuÃ¡rios de outro hospital',
+          error: 'VocÃƒÂª nÃƒÂ£o tem permissÃƒÂ£o para excluir usuÃƒÂ¡rios de outro hospital',
           message: 'Isolamento multi-tenant ativo'
         });
       }
     }
 
-    console.log(`ðŸŽ¯ Excluindo usuÃ¡rio: ${userIdToDelete}`);
+    console.log(`Ã°Å¸Å½Â¯ Excluindo usuÃƒÂ¡rio: ${userIdToDelete}`);
 
-    // 1. Deletar referÃªncias na tabela user_hospitals
+    // 1. Deletar referÃƒÂªncias na tabela user_hospitals
     const { error: userHospitalError } = await supabase
       .from('user_hospitals')
       .delete()
       .eq('user_id', userIdToDelete);
 
     if (userHospitalError) {
-      console.warn('âš ï¸ Erro ao deletar user_hospitals:', userHospitalError);
+      console.warn('Ã¢Å¡Â Ã¯Â¸Â Erro ao deletar user_hospitals:', userHospitalError);
     }
 
-    // 2. Deletar solicitaÃ§Ãµes relacionadas
+    // 2. Deletar solicitaÃƒÂ§ÃƒÂµes relacionadas
     const { error: solicitacoesError } = await supabase
       .from('solicitacoes')
       .delete()
       .eq('user_id', userIdToDelete);
 
     if (solicitacoesError) {
-      console.warn('âš ï¸ Erro ao deletar solicitaÃ§Ãµes:', solicitacoesError);
+      console.warn('Ã¢Å¡Â Ã¯Â¸Â Erro ao deletar solicitaÃƒÂ§ÃƒÂµes:', solicitacoesError);
     }
 
-    // 3. Deletar perfil do usuÃ¡rio
+    // 3. Deletar perfil do usuÃƒÂ¡rio
     const { error: profileError } = await supabase
       .from('profiles')
       .delete()
       .eq('id', userIdToDelete);
 
     if (profileError) {
-      console.error('âŒ Erro ao deletar perfil:', profileError);
+      console.error('Ã¢ÂÅ’ Erro ao deletar perfil:', profileError);
       return res.status(500).json({
-        error: 'Erro ao deletar perfil do usuÃ¡rio',
+        error: 'Erro ao deletar perfil do usuÃƒÂ¡rio',
         details: profileError.message
       });
     }
 
-    // 4. Deletar da autenticaÃ§Ã£o do Supabase
+    // 4. Deletar da autenticaÃƒÂ§ÃƒÂ£o do Supabase
     const { error: authError } = await supabase.auth.admin.deleteUser(userIdToDelete);
     
     if (authError) {
-      console.warn('âš ï¸ Erro ao deletar da auth (perfil jÃ¡ foi removido):', authError.message);
+      console.warn('Ã¢Å¡Â Ã¯Â¸Â Erro ao deletar da auth (perfil jÃƒÂ¡ foi removido):', authError.message);
     }
 
-    console.log('âœ… UsuÃ¡rio excluÃ­do com sucesso:', userIdToDelete);
+    console.log('Ã¢Å“â€¦ UsuÃƒÂ¡rio excluÃƒÂ­do com sucesso:', userIdToDelete);
 
     res.json({
       success: true,
-      message: 'UsuÃ¡rio excluÃ­do com sucesso',
+      message: 'UsuÃƒÂ¡rio excluÃƒÂ­do com sucesso',
       user_id: userIdToDelete,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
-    console.error('ðŸ’¥ Erro ao excluir usuÃ¡rio:', error);
+    console.error('Ã°Å¸â€™Â¥ Erro ao excluir usuÃƒÂ¡rio:', error);
     res.status(500).json({
-      error: 'Erro interno ao excluir usuÃ¡rio',
+      error: 'Erro interno ao excluir usuÃƒÂ¡rio',
       message: error.message,
       timestamp: new Date().toISOString()
     });
   }
 });
 
-// ROTA POST CADASTRAR USUÃRIO - IMPLEMENTAÃ‡ÃƒO DIRETA
+// ROTA POST CADASTRAR USUÃƒÂRIO - IMPLEMENTAÃƒâ€¡ÃƒÆ’O DIRETA
 app.post('/api/cadastrar-usuario', async (req, res) => {
   try {
-    console.log('ðŸ‘¤ POST /api/cadastrar-usuario chamado');
+    console.log('Ã°Å¸â€˜Â¤ POST /api/cadastrar-usuario chamado');
     console.log('Body recebido:', req.body);
 
     const { nome, email, role, hospital_id, admin_hospital_id } = req.body;
 
-    // ValidaÃ§Ã£o bÃ¡sica
+    // ValidaÃƒÂ§ÃƒÂ£o bÃƒÂ¡sica
     if (!nome || !email || !role) {
       return res.status(400).json({
-        error: 'Nome, email e role sÃ£o obrigatÃ³rios',
+        error: 'Nome, email e role sÃƒÂ£o obrigatÃƒÂ³rios',
         required: ['nome', 'email', 'role'],
         optional: ['hospital_id']
       });
     }
 
-    // âš ï¸ ISOLAMENTO POR HOSPITAL - Verificar se admin estÃ¡ criando usuÃ¡rio no prÃ³prio hospital
+    // Ã¢Å¡Â Ã¯Â¸Â ISOLAMENTO POR HOSPITAL - Verificar se admin estÃƒÂ¡ criando usuÃƒÂ¡rio no prÃƒÂ³prio hospital
     if (admin_hospital_id && hospital_id && admin_hospital_id !== hospital_id) {
-      console.warn(`âš ï¸ Admin tentando criar usuÃ¡rio em outro hospital: ${admin_hospital_id} vs ${hospital_id}`);
+      console.warn(`Ã¢Å¡Â Ã¯Â¸Â Admin tentando criar usuÃƒÂ¡rio em outro hospital: ${admin_hospital_id} vs ${hospital_id}`);
       return res.status(403).json({
-        error: 'VocÃª nÃ£o pode criar usuÃ¡rios para outro hospital',
+        error: 'VocÃƒÂª nÃƒÂ£o pode criar usuÃƒÂ¡rios para outro hospital',
         message: 'Isolamento multi-tenant ativo'
       });
     }
@@ -183,17 +184,17 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
-        error: 'Email invÃ¡lido',
+        error: 'Email invÃƒÂ¡lido',
         email: email
       });
     }
 
-    console.log(`ðŸ‘¥ Criando usuÃ¡rio: ${nome} (${email}) - Role: ${role}`);
+    console.log(`Ã°Å¸â€˜Â¥ Criando usuÃƒÂ¡rio: ${nome} (${email}) - Role: ${role}`);
 
-    // 1. Criar usuÃ¡rio na autenticaÃ§Ã£o do Supabase com email de convite
+    // 1. Criar usuÃƒÂ¡rio na autenticaÃƒÂ§ÃƒÂ£o do Supabase com email de convite
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: email,
-      email_confirm: false, // NÃ£o confirmar automaticamente para forÃ§ar definiÃ§Ã£o de senha
+      email_confirm: false, // NÃƒÂ£o confirmar automaticamente para forÃƒÂ§ar definiÃƒÂ§ÃƒÂ£o de senha
       user_metadata: {
         nome_completo: nome,
         role: role
@@ -201,18 +202,18 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
     });
 
     if (authError) {
-      console.error('âŒ Erro ao criar usuÃ¡rio na auth:', authError);
+      console.error('Ã¢ÂÅ’ Erro ao criar usuÃƒÂ¡rio na auth:', authError);
       return res.status(400).json({
-        error: 'Erro ao criar usuÃ¡rio: ' + authError.message
+        error: 'Erro ao criar usuÃƒÂ¡rio: ' + authError.message
       });
     }
 
-    console.log('âœ… UsuÃ¡rio criado na auth:', authUser.user.id);
+    console.log('Ã¢Å“â€¦ UsuÃƒÂ¡rio criado na auth:', authUser.user.id);
 
     // 2. Enviar email de convite para definir senha
-    console.log('ðŸ“§ Tentando enviar email de convite...');
+    console.log('Ã°Å¸â€œÂ§ Tentando enviar email de convite...');
     const redirectURL = getPasswordRedirectURL();
-    console.log('ðŸ”— URL de redirecionamento:', redirectURL);
+    console.log('Ã°Å¸â€â€” URL de redirecionamento:', redirectURL);
     
     const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
       redirectTo: redirectURL,
@@ -224,19 +225,19 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
     });
 
     if (inviteError) {
-      console.error('âŒ ERRO ao enviar email de convite:', inviteError);
-      console.error('ðŸ“§ Detalhes do erro:', {
+      console.error('Ã¢ÂÅ’ ERRO ao enviar email de convite:', inviteError);
+      console.error('Ã°Å¸â€œÂ§ Detalhes do erro:', {
         code: inviteError.code,
         message: inviteError.message,
         details: inviteError.details || 'Sem detalhes adicionais'
       });
-      // NÃ£o falhar a criaÃ§Ã£o por causa do email, apenas avisar
+      // NÃƒÂ£o falhar a criaÃƒÂ§ÃƒÂ£o por causa do email, apenas avisar
     } else {
-      console.log('âœ… Email de convite enviado com sucesso para:', email);
-      console.log('ðŸ“¬ Dados do envio:', inviteData);
+      console.log('Ã¢Å“â€¦ Email de convite enviado com sucesso para:', email);
+      console.log('Ã°Å¸â€œÂ¬ Dados do envio:', inviteData);
     }
 
-    // 2. Criar perfil do usuÃ¡rio na tabela profiles
+    // 2. Criar perfil do usuÃƒÂ¡rio na tabela profiles
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .insert({
@@ -251,38 +252,38 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
       .single();
 
     if (profileError) {
-      console.error('âŒ Erro ao criar perfil:', profileError);
-      // Tentar remover o usuÃ¡rio da auth se o perfil falhar
+      console.error('Ã¢ÂÅ’ Erro ao criar perfil:', profileError);
+      // Tentar remover o usuÃƒÂ¡rio da auth se o perfil falhar
       await supabase.auth.admin.deleteUser(authUser.user.id);
       return res.status(500).json({
-        error: 'Erro ao criar perfil do usuÃ¡rio',
+        error: 'Erro ao criar perfil do usuÃƒÂ¡rio',
         details: profileError.message
       });
     }
 
-    console.log('âœ… Perfil criado:', profile.id);
+    console.log('Ã¢Å“â€¦ Perfil criado:', profile.id);
 
-    // 3. Criar vÃ­nculo com hospital se fornecido
+    // 3. Criar vÃƒÂ­nculo com hospital se fornecido
     if (hospital_id) {
       const { error: hospitalError } = await supabase
         .from('user_hospitals')
         .insert({
           user_id: authUser.user.id,
           hospital_id: hospital_id,
-          role: role, // Incluindo o role que Ã© obrigatÃ³rio na tabela
+          role: role, // Incluindo o role que ÃƒÂ© obrigatÃƒÂ³rio na tabela
           ativo: true
         });
 
       if (hospitalError) {
-        console.warn('âš ï¸ Erro ao vincular hospital:', hospitalError);
+        console.warn('Ã¢Å¡Â Ã¯Â¸Â Erro ao vincular hospital:', hospitalError);
       } else {
-        console.log('âœ… UsuÃ¡rio vinculado ao hospital:', hospital_id);
+        console.log('Ã¢Å“â€¦ UsuÃƒÂ¡rio vinculado ao hospital:', hospital_id);
       }
     }
 
     res.status(201).json({
       success: true,
-      message: 'UsuÃ¡rio cadastrado com sucesso! Email de convite enviado.',
+      message: 'UsuÃƒÂ¡rio cadastrado com sucesso! Email de convite enviado.',
       data: {
         id: authUser.user.id,
         email: email,
@@ -296,39 +297,39 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('ðŸ’¥ Erro ao cadastrar usuÃ¡rio:', error);
+    console.error('Ã°Å¸â€™Â¥ Erro ao cadastrar usuÃƒÂ¡rio:', error);
     res.status(500).json({
-      error: 'Erro interno ao cadastrar usuÃ¡rio',
+      error: 'Erro interno ao cadastrar usuÃƒÂ¡rio',
       message: error.message,
       timestamp: new Date().toISOString()
     });
   }
 });
 
-// ROTA POST DEFINIR SENHA MANUAL - SOLUÃ‡ÃƒO PARA PROBLEMAS DE EMAIL
+// ROTA POST DEFINIR SENHA MANUAL - SOLUÃƒâ€¡ÃƒÆ’O PARA PROBLEMAS DE EMAIL
 app.post('/api/definir-senha-manual', async (req, res) => {
   try {
-    console.log('ðŸ” POST /api/definir-senha-manual chamado');
+    console.log('Ã°Å¸â€Â POST /api/definir-senha-manual chamado');
     console.log('Body recebido:', req.body);
 
     const { user_id, email, senha } = req.body;
 
-    // ValidaÃ§Ã£o bÃ¡sica
+    // ValidaÃƒÂ§ÃƒÂ£o bÃƒÂ¡sica
     if (!user_id || !senha) {
       return res.status(400).json({
-        error: 'user_id e senha sÃ£o obrigatÃ³rios',
+        error: 'user_id e senha sÃƒÂ£o obrigatÃƒÂ³rios',
         required: ['user_id', 'senha']
       });
     }
 
-    // Validar senha (mÃ­nimo 6 caracteres)
+    // Validar senha (mÃƒÂ­nimo 6 caracteres)
     if (senha.length < 6) {
       return res.status(400).json({
         error: 'Senha deve ter pelo menos 6 caracteres'
       });
     }
 
-    console.log(`ðŸ” Definindo senha manual para usuÃ¡rio: ${user_id}`);
+    console.log(`Ã°Å¸â€Â Definindo senha manual para usuÃƒÂ¡rio: ${user_id}`);
 
     // 1. Atualizar senha no Supabase Auth
     const { data: updateData, error: updateError } = await supabase.auth.admin.updateUserById(user_id, {
@@ -337,23 +338,23 @@ app.post('/api/definir-senha-manual', async (req, res) => {
     });
 
     if (updateError) {
-      console.error('âŒ Erro ao atualizar senha:', updateError);
+      console.error('Ã¢ÂÅ’ Erro ao atualizar senha:', updateError);
       return res.status(400).json({
         error: 'Erro ao definir senha: ' + updateError.message
       });
     }
 
-    console.log('âœ… Senha definida com sucesso:', user_id);
+    console.log('Ã¢Å“â€¦ Senha definida com sucesso:', user_id);
 
     res.json({
       success: true,
-      message: 'Senha definida com sucesso! UsuÃ¡rio pode fazer login.',
+      message: 'Senha definida com sucesso! UsuÃƒÂ¡rio pode fazer login.',
       user_id: user_id,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
-    console.error('ðŸ’¥ Erro ao definir senha manual:', error);
+    console.error('Ã°Å¸â€™Â¥ Erro ao definir senha manual:', error);
     res.status(500).json({
       error: 'Erro interno ao definir senha',
       message: error.message,
@@ -362,23 +363,23 @@ app.post('/api/definir-senha-manual', async (req, res) => {
   }
 });
 
-// ROTA POST DEFINIR SENHA INICIAL - IMPLEMENTAÃ‡ÃƒO DIRETA
+// ROTA POST DEFINIR SENHA INICIAL - IMPLEMENTAÃƒâ€¡ÃƒÆ’O DIRETA
 app.post('/api/definir-senha-inicial', async (req, res) => {
   try {
-    console.log('ðŸ”‘ POST /api/definir-senha-inicial chamado');
+    console.log('Ã°Å¸â€â€˜ POST /api/definir-senha-inicial chamado');
     console.log('Body recebido:', req.body);
 
     const { email, password } = req.body;
 
-    // ValidaÃ§Ã£o bÃ¡sica
+    // ValidaÃƒÂ§ÃƒÂ£o bÃƒÂ¡sica
     if (!email || !password) {
       return res.status(400).json({
-        error: 'Email e senha sÃ£o obrigatÃ³rios',
+        error: 'Email e senha sÃƒÂ£o obrigatÃƒÂ³rios',
         required: ['email', 'password']
       });
     }
 
-    // Validar senha mÃ­nima
+    // Validar senha mÃƒÂ­nima
     if (password.length < 6) {
       return res.status(400).json({
         error: 'Senha deve ter pelo menos 6 caracteres',
@@ -386,15 +387,15 @@ app.post('/api/definir-senha-inicial', async (req, res) => {
       });
     }
 
-    console.log(`ðŸ”‘ Definindo senha para: ${email}`);
+    console.log(`Ã°Å¸â€â€˜ Definindo senha para: ${email}`);
 
-    // 1. Buscar usuÃ¡rio no Supabase Auth por email
+    // 1. Buscar usuÃƒÂ¡rio no Supabase Auth por email
     const { data: users, error: listError } = await supabase.auth.admin.listUsers();
     
     if (listError) {
-      console.error('âŒ Erro ao listar usuÃ¡rios:', listError);
+      console.error('Ã¢ÂÅ’ Erro ao listar usuÃƒÂ¡rios:', listError);
       return res.status(500).json({
-        error: 'Erro ao buscar usuÃ¡rio',
+        error: 'Erro ao buscar usuÃƒÂ¡rio',
         details: listError.message
       });
     }
@@ -402,16 +403,16 @@ app.post('/api/definir-senha-inicial', async (req, res) => {
     const user = users.users.find(u => u.email === email);
     
     if (!user) {
-      console.error('âŒ UsuÃ¡rio nÃ£o encontrado:', email);
+      console.error('Ã¢ÂÅ’ UsuÃƒÂ¡rio nÃƒÂ£o encontrado:', email);
       return res.status(404).json({
-        error: 'UsuÃ¡rio nÃ£o encontrado',
+        error: 'UsuÃƒÂ¡rio nÃƒÂ£o encontrado',
         email: email
       });
     }
 
-    console.log('ðŸ‘¤ UsuÃ¡rio encontrado:', user.id);
+    console.log('Ã°Å¸â€˜Â¤ UsuÃƒÂ¡rio encontrado:', user.id);
 
-    // 2. Atualizar senha do usuÃ¡rio
+    // 2. Atualizar senha do usuÃƒÂ¡rio
     const { data: updateData, error: updateError } = await supabase.auth.admin.updateUserById(
       user.id,
       { 
@@ -421,14 +422,14 @@ app.post('/api/definir-senha-inicial', async (req, res) => {
     );
 
     if (updateError) {
-      console.error('âŒ Erro ao atualizar senha:', updateError);
+      console.error('Ã¢ÂÅ’ Erro ao atualizar senha:', updateError);
       return res.status(500).json({
         error: 'Erro ao definir senha',
         details: updateError.message
       });
     }
 
-    console.log('âœ… Senha definida com sucesso para:', email);
+    console.log('Ã¢Å“â€¦ Senha definida com sucesso para:', email);
 
     res.json({
       success: true,
@@ -439,7 +440,7 @@ app.post('/api/definir-senha-inicial', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('ðŸ’¥ Erro ao definir senha inicial:', error);
+    console.error('Ã°Å¸â€™Â¥ Erro ao definir senha inicial:', error);
     res.status(500).json({
       error: 'Erro interno ao definir senha',
       message: error.message,
@@ -462,7 +463,7 @@ app.get('/api/db-status', async (req, res) => {
   try {
     const startTime = Date.now();
     
-    // Tenta fazer uma query simples para verificar conexÃ£o
+    // Tenta fazer uma query simples para verificar conexÃƒÂ£o
     const { data, error } = await supabase
       .from('profiles')
       .select('id')
@@ -501,7 +502,7 @@ app.get('/api/auth/status', async (req, res) => {
   try {
     const startTime = Date.now();
     
-    // Verifica se o serviÃ§o de auth estÃ¡ funcionando
+    // Verifica se o serviÃƒÂ§o de auth estÃƒÂ¡ funcionando
     const { data, error } = await supabase.auth.getSession();
     
     const responseTime = Date.now() - startTime;
@@ -533,28 +534,28 @@ const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:suporte@appvital.com.
 let vapidConfigured = false;
 if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   try {
-    // Limpar chaves - remover espaÃ§os, quebras de linha e "="
+    // Limpar chaves - remover espaÃƒÂ§os, quebras de linha e "="
     const cleanPublicKey = VAPID_PUBLIC_KEY.replace(/[\s\r\n=]+/g, '').trim();
     const cleanPrivateKey = VAPID_PRIVATE_KEY.replace(/[\s\r\n=]+/g, '').trim();
     
     webpush.setVapidDetails(VAPID_SUBJECT, cleanPublicKey, cleanPrivateKey);
     vapidConfigured = true;
-    console.log('âœ… Web Push VAPID configurado com sucesso');
+    console.log('Ã¢Å“â€¦ Web Push VAPID configurado com sucesso');
   } catch (vapidError) {
-    console.error('âŒ Erro ao configurar VAPID:', vapidError.message);
+    console.error('Ã¢ÂÅ’ Erro ao configurar VAPID:', vapidError.message);
   }
 } else {
-  console.warn('âš ï¸ VAPID keys nÃ£o configuradas ou web-push nÃ£o instalado');
+  console.warn('Ã¢Å¡Â Ã¯Â¸Â VAPID keys nÃƒÂ£o configuradas ou web-push nÃƒÂ£o instalado');
 }
 
 // POST /api/push/subscription - Registrar subscription
 app.post('/api/push/subscription', async (req, res) => {
   try {
-    console.log('ðŸ“± POST /api/push/subscription');
+    console.log('Ã°Å¸â€œÂ± POST /api/push/subscription');
     const { subscription, user_id, hospital_id, device_info } = req.body;
 
     if (!subscription || !subscription.endpoint) {
-      return res.status(400).json({ error: 'Subscription invÃ¡lida' });
+      return res.status(400).json({ error: 'Subscription invÃƒÂ¡lida' });
     }
 
     // Primeiro, deletar qualquer subscription existente com o mesmo endpoint
@@ -578,14 +579,14 @@ app.post('/api/push/subscription', async (req, res) => {
       .select();
 
     if (error) {
-      console.error('âŒ Erro ao salvar subscription:', error);
+      console.error('Ã¢ÂÅ’ Erro ao salvar subscription:', error);
       return res.status(500).json({ error: 'Erro ao salvar subscription', details: error.message });
     }
 
-    console.log('âœ… Subscription salva:', data?.[0]?.id);
+    console.log('Ã¢Å“â€¦ Subscription salva:', data?.[0]?.id);
     res.json({ success: true, id: data?.[0]?.id });
   } catch (error) {
-    console.error('ðŸ’¥ Erro:', error);
+    console.error('Ã°Å¸â€™Â¥ Erro:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -595,7 +596,7 @@ app.delete('/api/push/cleanup', async (req, res) => {
   try {
     const { hospital_id } = req.body;
 
-    // âš ï¸ ISOLAMENTO POR HOSPITAL
+    // Ã¢Å¡Â Ã¯Â¸Â ISOLAMENTO POR HOSPITAL
     let query = supabase
       .from('push_subscriptions')
       .select('*')
@@ -604,9 +605,9 @@ app.delete('/api/push/cleanup', async (req, res) => {
     // Se hospital_id fornecido, filtrar apenas subscriptions desse hospital
     if (hospital_id) {
       query = query.eq('hospital_id', hospital_id);
-      console.log(`ðŸ¥ Cleanup filtrado para hospital: ${hospital_id}`);
+      console.log(`Ã°Å¸ÂÂ¥ Cleanup filtrado para hospital: ${hospital_id}`);
     } else {
-      console.log('âš ï¸ Cleanup sem filtro de hospital - limpando duplicatas globais');
+      console.log('Ã¢Å¡Â Ã¯Â¸Â Cleanup sem filtro de hospital - limpando duplicatas globais');
     }
 
     // Buscar subscriptions (filtradas ou todas)
@@ -656,16 +657,16 @@ app.delete('/api/push/subscription/:id', async (req, res) => {
     const { id } = req.params;
     const { hospital_id } = req.body;
 
-    // âš ï¸ ISOLAMENTO POR HOSPITAL
+    // Ã¢Å¡Â Ã¯Â¸Â ISOLAMENTO POR HOSPITAL
     let query = supabase
       .from('push_subscriptions')
       .delete()
       .eq('id', id);
 
-    // Se hospital_id fornecido, adicionar como filtro de seguranÃ§a
+    // Se hospital_id fornecido, adicionar como filtro de seguranÃƒÂ§a
     if (hospital_id) {
       query = query.eq('hospital_id', hospital_id);
-      console.log(`ðŸ¥ Delete subscription filtrado para hospital: ${hospital_id}`);
+      console.log(`Ã°Å¸ÂÂ¥ Delete subscription filtrado para hospital: ${hospital_id}`);
     }
 
     const { error } = await query;
@@ -686,7 +687,7 @@ app.delete('/api/push/subscription', async (req, res) => {
     const { endpoint } = req.body;
     
     if (!endpoint) {
-      return res.status(400).json({ error: 'Endpoint Ã© obrigatÃ³rio' });
+      return res.status(400).json({ error: 'Endpoint ÃƒÂ© obrigatÃƒÂ³rio' });
     }
 
     const { error } = await supabase
@@ -695,7 +696,7 @@ app.delete('/api/push/subscription', async (req, res) => {
       .eq('endpoint', endpoint);
 
     if (error) {
-      console.error('âŒ Erro ao remover subscription:', error);
+      console.error('Ã¢ÂÅ’ Erro ao remover subscription:', error);
       return res.status(500).json({ error: error.message });
     }
 
@@ -705,16 +706,16 @@ app.delete('/api/push/subscription', async (req, res) => {
   }
 });
 
-// POST /api/push/send - Enviar notificaÃ§Ã£o push
+// POST /api/push/send - Enviar notificaÃƒÂ§ÃƒÂ£o push
 // Aceita tanto formato manual quanto formato do Supabase Database Webhook
 app.post('/api/push/send', async (req, res) => {
   try {
-    console.log('ðŸ”” POST /api/push/send');
-    console.log('ðŸ“¦ Body recebido:', JSON.stringify(req.body, null, 2));
+    console.log('Ã°Å¸â€â€ POST /api/push/send');
+    console.log('Ã°Å¸â€œÂ¦ Body recebido:', JSON.stringify(req.body, null, 2));
     
     let hospital_id, title, body, data, urgency;
     
-    // Verificar se Ã© formato do Supabase Webhook (tem "type" e "record")
+    // Verificar se ÃƒÂ© formato do Supabase Webhook (tem "type" e "record")
     if (req.body.type && req.body.record) {
       // Formato Supabase Database Webhook
       const record = req.body.record;
@@ -727,7 +728,7 @@ app.post('/api/push/send', async (req, res) => {
         tipo: 'nova_solicitacao',
         table: req.body.table
       };
-      console.log('ðŸ“‹ Formato Supabase Webhook detectado');
+      console.log('Ã°Å¸â€œâ€¹ Formato Supabase Webhook detectado');
     } else {
       // Formato manual
       hospital_id = req.body.hospital_id;
@@ -735,44 +736,44 @@ app.post('/api/push/send', async (req, res) => {
       body = req.body.body;
       urgency = req.body.urgency;
       data = req.body.data;
-      console.log('ðŸ“‹ Formato manual detectado');
+      console.log('Ã°Å¸â€œâ€¹ Formato manual detectado');
     }
 
     if (!webpush) {
-      return res.status(503).json({ error: 'Web Push nÃ£o disponÃ­vel' });
+      return res.status(503).json({ error: 'Web Push nÃƒÂ£o disponÃƒÂ­vel' });
     }
 
     if (!vapidConfigured) {
-      return res.status(503).json({ error: 'VAPID nÃ£o configurado corretamente' });
+      return res.status(503).json({ error: 'VAPID nÃƒÂ£o configurado corretamente' });
     }
 
-    // âš ï¸ ISOLAMENTO POR HOSPITAL - OBRIGATÃ“RIO
+    // Ã¢Å¡Â Ã¯Â¸Â ISOLAMENTO POR HOSPITAL - OBRIGATÃƒâ€œRIO
     if (!hospital_id) {
-      console.warn('âš ï¸ hospital_id nÃ£o fornecido - notificaÃ§Ã£o nÃ£o enviada por seguranÃ§a');
+      console.warn('Ã¢Å¡Â Ã¯Â¸Â hospital_id nÃƒÂ£o fornecido - notificaÃƒÂ§ÃƒÂ£o nÃƒÂ£o enviada por seguranÃƒÂ§a');
       return res.status(400).json({ 
-        error: 'hospital_id Ã© obrigatÃ³rio para enviar notificaÃ§Ãµes',
+        error: 'hospital_id ÃƒÂ© obrigatÃƒÂ³rio para enviar notificaÃƒÂ§ÃƒÂµes',
         message: 'Isolamento multi-tenant ativo'
       });
     }
 
-    console.log(`ðŸ¥ Filtrando notificaÃ§Ãµes para hospital: ${hospital_id}`);
+    console.log(`Ã°Å¸ÂÂ¥ Filtrando notificaÃƒÂ§ÃƒÂµes para hospital: ${hospital_id}`);
 
-    // Buscar APENAS subscriptions do hospital especÃ­fico
+    // Buscar APENAS subscriptions do hospital especÃƒÂ­fico
     const { data: subscriptions, error } = await supabase
       .from('push_subscriptions')
       .select('*')
       .eq('hospital_id', hospital_id);
 
     if (error) {
-      console.error('âŒ Erro ao buscar subscriptions:', error);
+      console.error('Ã¢ÂÅ’ Erro ao buscar subscriptions:', error);
       return res.status(500).json({ error: error.message });
     }
 
-    console.log(`ðŸ“¤ Hospital ${hospital_id}: Enviando para ${subscriptions?.length || 0} dispositivos`);
+    console.log(`Ã°Å¸â€œÂ¤ Hospital ${hospital_id}: Enviando para ${subscriptions?.length || 0} dispositivos`);
 
-    // Se nÃ£o houver subscriptions para este hospital, retornar sucesso (nÃ£o Ã© erro)
+    // Se nÃƒÂ£o houver subscriptions para este hospital, retornar sucesso (nÃƒÂ£o ÃƒÂ© erro)
     if (!subscriptions || subscriptions.length === 0) {
-      console.log(`â„¹ï¸ Nenhum dispositivo registrado para o hospital ${hospital_id}`);
+      console.log(`Ã¢â€žÂ¹Ã¯Â¸Â Nenhum dispositivo registrado para o hospital ${hospital_id}`);
       return res.json({ sent: 0, failed: 0, errors: [], message: 'Nenhum dispositivo registrado para este hospital' });
     }
 
@@ -814,10 +815,10 @@ app.post('/api/push/send', async (req, res) => {
       }
     }
 
-    console.log(`âœ… Enviadas: ${results.sent}, Falhas: ${results.failed}`);
+    console.log(`Ã¢Å“â€¦ Enviadas: ${results.sent}, Falhas: ${results.failed}`);
     res.json(results);
   } catch (error) {
-    console.error('ðŸ’¥ Erro ao enviar push:', error);
+    console.error('Ã°Å¸â€™Â¥ Erro ao enviar push:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -843,10 +844,10 @@ app.get('/api/push/subscriptions', async (req, res) => {
       .order('created_at', { ascending: false })
       .limit(20);
 
-    // âš ï¸ ISOLAMENTO POR HOSPITAL - Filtrar se hospital_id fornecido
+    // Ã¢Å¡Â Ã¯Â¸Â ISOLAMENTO POR HOSPITAL - Filtrar se hospital_id fornecido
     if (hospital_id) {
       query = query.eq('hospital_id', hospital_id);
-      console.log(`ðŸ¥ Listando subscriptions do hospital: ${hospital_id}`);
+      console.log(`Ã°Å¸ÂÂ¥ Listando subscriptions do hospital: ${hospital_id}`);
     }
 
     const { data, error } = await query;
@@ -884,9 +885,12 @@ app.get('/api/notifications/status', (req, res) => {
   });
 });
 
+// Montar rotas de notificacoes agendadas
+app.use('/api/scheduled-notifications', scheduledNotifications.router);
+
 // Middleware de erro
 app.use((err, req, res, next) => {
-  console.error('ðŸ’¥ Erro:', err);
+  console.error('Ã°Å¸â€™Â¥ Erro:', err);
   res.status(500).json({
     error: 'Erro interno do servidor',
     message: err.message
@@ -896,25 +900,26 @@ app.use((err, req, res, next) => {
 // Middleware 404
 app.use((req, res) => {
   res.status(404).json({
-    error: 'Rota nÃ£o encontrada',
+    error: 'Rota nÃƒÂ£o encontrada',
     path: req.path,
     method: req.method
   });
 });
 
-// ExecuÃ§Ã£o local
+// ExecuÃƒÂ§ÃƒÂ£o local
 if (require.main === module) {
   const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => {
-    console.log(`ðŸš€ VITAL API na porta ${PORT}`);
+    console.log(`Ã°Å¸Å¡â‚¬ VITAL API na porta ${PORT}`);
   });
 }
 
 
 // Importar e iniciar job de notificacoes agendadas
-const scheduledNotifications = require('./routes/scheduled-notifications');
 scheduledNotifications.iniciarJobAutomatico(supabase, webpush);
 
 module.exports = app;
+
+
 
 
