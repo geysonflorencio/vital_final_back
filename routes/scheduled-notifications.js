@@ -198,4 +198,41 @@ router.get('/status', async (req, res) => {
   }
 });
 
-module.exports = { router, processarNotificacoesPendentes };
+
+// Iniciar job automatico de verificacao
+let jobInterval = null;
+let supabaseInstance = null;
+
+function iniciarJobAutomatico(supabase, webpushInstance) {
+  supabaseInstance = supabase;
+  
+  if (webpushInstance) {
+    console.log(' Job de notificacoes agendadas iniciado (intervalo: 1 minuto)');
+  } else {
+    console.log(' Job iniciado mas web-push nao disponivel');
+  }
+  
+  // Executar imediatamente
+  processarNotificacoesPendentes(supabase).catch(err => {
+    console.error('Erro na execucao inicial:', err.message);
+  });
+  
+  // Configurar intervalo (a cada 1 minuto)
+  jobInterval = setInterval(() => {
+    processarNotificacoesPendentes(supabase).catch(err => {
+      console.error('Erro no job de notificacoes:', err.message);
+    });
+  }, 60000);
+  
+  return { started: true };
+}
+
+function getStatus() {
+  return {
+    jobRunning: !!jobInterval,
+    supabaseConnected: !!supabaseInstance
+  };
+}
+
+module.exports = { router, processarNotificacoesPendentes, iniciarJobAutomatico, getStatus };
+
