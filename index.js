@@ -37,9 +37,19 @@ app.use(cors({
 
 app.use(express.json());
 
-// Configuração do Supabase
-const supabaseUrl = process.env.SUPABASE_URL || 'https://aeysoqtbencykavivgoe.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleXNvcXRiZW5jeWthdml2Z29lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTE4MTY1OSwiZXhwIjoyMDY0NzU3NjU5fQ.g64X3iebdB_TY_FWd6AI8mlej4uKMrKiFLG11z6hZlQ';
+// Configuração do Supabase - SEM FALLBACK DE CHAVES (segurança)
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Validação de segurança - NUNCA iniciar sem variáveis de ambiente
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ FATAL: Variáveis de ambiente obrigatórias não configuradas');
+  console.error('   - SUPABASE_URL:', supabaseUrl ? '✅ OK' : '❌ FALTANDO');
+  console.error('   - SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceKey ? '✅ OK' : '❌ FALTANDO');
+  console.error('');
+  console.error('⚠️ Configure as variáveis de ambiente no Render ou .env local');
+  process.exit(1);
+}
 
 console.log('🔧 Inicializando Supabase...', { url: supabaseUrl });
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -719,15 +729,35 @@ app.post('/api/push/send', async (req, res) => {
       // Formato Supabase Database Webhook
       const record = req.body.record;
       hospital_id = record.hospital_id;
-      title = '🚨 Nova Solicitação TRR';
-      body = `Paciente: ${record.paciente || 'N/A'} - ${record.motivo || 'Nova solicitação'}`;
-      urgency = 'high';
+      
+      // ⭐ Calcular código de cor baseado no MEWS (mesma lógica do frontend)
+      const mews = parseInt(record.mews) || 0;
+      let cor = 'azul';
+      if (mews >= 7) cor = 'vermelho';
+      else if (mews >= 5) cor = 'laranja';
+      else if (mews >= 3) cor = 'amarelo';
+      else if (mews >= 1) cor = 'verde';
+      
+      const codigoCores = {
+        'vermelho': '🔴 CÓDIGO VERMELHO',
+        'laranja': '🟠 CÓDIGO LARANJA',
+        'amarelo': '🟡 CÓDIGO AMARELO',
+        'verde': '🟢 CÓDIGO VERDE',
+        'azul': '🔵 CÓDIGO AZUL'
+      };
+      const codigo = codigoCores[cor] || '⚪ SEM CÓDIGO';
+      const isVermelho = cor === 'vermelho';
+      
+      title = isVermelho ? '🚨 EMERGÊNCIA TRR' : '📋 Nova Solicitação TRR';
+      body = `${codigo}\n${record.paciente || 'N/A'} - Leito ${record.leito || 'N/A'}\nMEWS: ${mews} | ${record.motivo || 'Nova solicitação'}`;
+      urgency = isVermelho ? 'high' : 'normal';
       data = {
         solicitacao_id: record.id,
         tipo: 'nova_solicitacao',
-        table: req.body.table
+        table: req.body.table,
+        classificacao: cor
       };
-      console.log('📋 Formato Supabase Webhook detectado');
+      console.log(`📋 Formato Supabase Webhook detectado - ${codigo}`);
     } else {
       // Formato manual
       hospital_id = req.body.hospital_id;
