@@ -717,32 +717,80 @@ app.post('/api/push/send', async (req, res) => {
     
     let hospital_id, title, body, data, urgency;
     
-    // Verificar se ÃƒÂ© formato do Supabase Webhook (tem "type" e "record")
+    // Verificar se é formato do Supabase Webhook (tem "type" e "record")
     if (req.body.type && req.body.record) {
       // Formato Supabase Database Webhook
       const record = req.body.record;
       hospital_id = record.hospital_id;
       
-      // Calcular codigo de cor baseado no MEWS (mesma logica do frontend)
+      // ⭐ MAPA DE MOTIVOS ESPECÍFICOS COM COR OBRIGATÓRIA (igual ao frontend)
+      const motivosEspecificos = {
+        'ajuste de prescrição': 'branco',
+        'liberar sne': 'verde',
+        'acesso venoso': 'verde',
+        'dor refratária': 'amarelo',
+        'retenção urinária (bexigoma)': 'amarelo',
+        'agitação psicomotora': 'amarelo',
+        'dor aguda': 'laranja',
+        'valor ou imagem de pânico': 'laranja',
+        'hiper ou hipoglicemia': 'laranja',
+        'anúrico nas últimas 6 horas': 'laranja',
+        'óbito paliativo': 'laranja',
+        'pcr': 'vermelho',
+        'insuficiencia respiratória aguda': 'vermelho',
+        'arritimia cardiáca': 'vermelho',
+        'glasgow <= 10': 'vermelho',
+        'convulsão': 'vermelho',
+        'admissão': 'branco',
+        'protocolo avc': 'vermelho',
+        'protocolo dor torácica': 'vermelho',
+        'protocolo sepse': 'vermelho',
+      };
+      
       const mews = parseInt(record.mews) || 0;
-      let cor = 'azul';
-      if (mews >= 7) cor = 'vermelho';
-      else if (mews >= 5) cor = 'laranja';
-      else if (mews >= 3) cor = 'amarelo';
-      else if (mews >= 1) cor = 'verde';
+      const motivoEspecifico = (record.motivo_especifico || '').toLowerCase().trim();
+      const motivo = record.motivo || '';
+      
+      // ⭐ LÓGICA CORRIGIDA: Mesma ordem de prioridade do frontend
+      let cor = 'branco'; // default
+      
+      // 1. Primeiro: verificar motivo_especifico (tem prioridade máxima)
+      if (motivoEspecifico && motivosEspecificos[motivoEspecifico]) {
+        cor = motivosEspecificos[motivoEspecifico];
+        console.log(`📋 Cor determinada por motivo_especifico: "${motivoEspecifico}" => ${cor.toUpperCase()}`);
+      }
+      // 2. Segundo: verificar tipo de motivo (Transporte Protocolo é vermelho)
+      else if (motivo === 'Transporte Protocolo') {
+        cor = 'vermelho';
+        console.log('🚑 Cor determinada por Transporte Protocolo => VERMELHO');
+      }
+      else if (motivo === 'Transporte') {
+        cor = 'verde';
+        console.log('🚑 Cor determinada por Transporte => VERDE');
+      }
+      // 3. Terceiro: usar MEWS
+      else {
+        if (mews >= 6) cor = 'vermelho';
+        else if (mews >= 4) cor = 'laranja';
+        else if (mews === 3) cor = 'amarelo';
+        else if (mews >= 1) cor = 'verde';
+        else cor = 'branco';
+        console.log(`📊 Cor determinada por MEWS ${mews} => ${cor.toUpperCase()}`);
+      }
       
       const codigoCores = {
         'vermelho': 'CODIGO VERMELHO',
         'laranja': 'CODIGO LARANJA',
         'amarelo': 'CODIGO AMARELO',
         'verde': 'CODIGO VERDE',
-        'azul': 'CODIGO AZUL'
+        'branco': 'CODIGO BRANCO'
       };
       const codigo = codigoCores[cor] || 'SEM CODIGO';
       const isVermelho = cor === 'vermelho';
+      const isLaranja = cor === 'laranja';
       
-      title = isVermelho ? 'EMERGENCIA TRR' : 'Nova Solicitacao TRR';
-      body = `${codigo} - ${record.paciente || 'N/A'} - Leito ${record.leito || 'N/A'} - MEWS: ${mews} | ${record.motivo || 'Nova solicitacao'}`;
+      title = (isVermelho || isLaranja) ? 'EMERGENCIA TRR' : 'Nova Solicitacao TRR';
+      body = `${codigo} - ${record.paciente || 'N/A'} - Leito ${record.leito || 'N/A'} - MEWS: ${mews}${motivoEspecifico ? ' - ' + record.motivo_especifico : ''} | ${motivo || 'Nova solicitacao'}`;
       urgency = isVermelho ? 'high' : 'normal';
       data = {
         solicitacao_id: record.id,
@@ -750,7 +798,7 @@ app.post('/api/push/send', async (req, res) => {
         table: req.body.table,
         classificacao: cor
       };
-      console.log('Formato Supabase Webhook detectado - ' + codigo);
+      console.log('✅ Formato Supabase Webhook detectado - ' + codigo);
     } else {
       // Formato manual
       hospital_id = req.body.hospital_id;
