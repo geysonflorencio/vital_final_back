@@ -71,11 +71,31 @@ async function processarNotificacoesPendentes(supabase) {
           continue;
         }
 
-        // Buscar subscriptions do hospital (SEM filtro de ativo)
+        // Verificar se a solicitação ainda está em reavaliação — evita alertas pós-desfecho
+        if (notif.solicitacao_id) {
+          const { data: sol } = await supabase
+            .from('solicitacoes')
+            .select('status')
+            .eq('id', notif.solicitacao_id)
+            .single();
+
+          if (sol && sol.status !== 'em_reavaliacao') {
+            console.log('[scheduled-notifications] Solicitacao ja finalizada, cancelando notificacao:', notif.id);
+            await supabase
+              .from('notificacoes_agendadas')
+              .update({ enviada: true, erro: 'Solicitacao ja finalizada' })
+              .eq('id', notif.id);
+            continue;
+          }
+        }
+
+        // Buscar subscriptions ATIVAS do hospital (updated_at nas últimas 30 dias)
+        const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
         const { data: subscriptions, error: subError } = await supabase
           .from('push_subscriptions')
           .select('*')
-          .eq('hospital_id', hospitalId);
+          .eq('hospital_id', hospitalId)
+          .gte('updated_at', cutoff);
 
         if (subError) {
           console.error('[scheduled-notifications] Erro ao buscar subscriptions:', subError.message);

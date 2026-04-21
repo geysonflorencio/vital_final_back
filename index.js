@@ -828,11 +828,13 @@ app.post('/api/push/send', async (req, res) => {
 
     console.log(`Ã°Å¸ÂÂ¥ Filtrando notificaÃƒÂ§ÃƒÂµes para hospital: ${hospital_id}`);
 
-    // Buscar APENAS subscriptions do hospital especÃƒÂ­fico
+    // Buscar subscriptions ativas do hospital (updated_at nos últimos 30 dias — exclui dispositivos deslogados)
+    const cutoff30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: subscriptions, error } = await supabase
       .from('push_subscriptions')
       .select('*')
-      .eq('hospital_id', hospital_id);
+      .eq('hospital_id', hospital_id)
+      .gte('updated_at', cutoff30d);
 
     if (error) {
       console.error('Ã¢ÂÅ’ Erro ao buscar subscriptions:', error);

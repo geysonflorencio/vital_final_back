@@ -118,11 +118,13 @@ router.post('/send', async (req, res) => {
 
     console.log('📤 Enviando push notifications', { hospital_id, title });
 
-    // Buscar todas as subscriptions do hospital
+    // Buscar subscriptions ativas (updated_at nos últimos 30 dias — exclui dispositivos deslogados)
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: subscriptions, error } = await supabase
       .from('push_subscriptions')
       .select('*')
-      .eq('hospital_id', hospital_id);
+      .eq('hospital_id', hospital_id)
+      .gte('updated_at', cutoff);
 
     if (error) {
       console.error('❌ Erro ao buscar subscriptions', error.message);
